@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LIEB.AI</title>
+  <style>
+    /* =========================
+       1) RESET & GLOBAL STYLES
+       ========================= */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0f0f0f;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      overflow-y: scroll; 
+      overflow-x: hidden;
+    }
+
+    /* =========================
+       2) HEADER & NAVBAR STYLES
+       ========================= */
+    header.navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      background: rgba(15, 15, 15, 0.8);
+      z-index: 9999;
+      border-bottom: 1px solid #333;
+    }
+    .navbar .logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #ab3cff;
+      text-shadow: 0 0 5px #ab3cff;
+    }
+    .navbar nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+    }
+    .navbar nav ul li a {
+      text-decoration: none;
+      color: #fff;
+      transition: color 0.3s;
+    }
+    .navbar nav ul li a:hover {
+      color: #ab3cff;
+    }
+
+    /* =========================
+       3) ANIMATION CONTAINER
+       ========================= */
+    .animation-container {
+      position: relative;
+      width: 100%;
+      height: 70vh;  /* 70% of viewport height */
+      margin-top: 60px; /* Reserve space for fixed navbar */
+      overflow: hidden;
+    }
+    /* Node Network Canvas */
+    #networkCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    /* K-Line Candlestick Canvas */
+    #klineCanvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1200px;
+      height: 300px;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+      z-index: 2;
+    }
+    /* Titles (Overlay) */
+    #title,
+    #subtitle {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      margin: 0 auto;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      text-shadow: 0 0 5px #ab3cff, 0 0 10px #ab3cff;
+    }
+    #title {
+      top: 10%;
+      font-size: 2.5rem;
+    }
+    #subtitle {
+      top: 18%;
+      font-size: 1.2rem;
+      color: #aaaaaa;
+    }
+    /* LIEB.AI scan-line effect */
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.02) 0,
+        rgba(0, 0, 0, 0.02) 2px
+      );
+      pointer-events: none;
+      animation: flicker 4s infinite;
+      z-index: 999;
+    }
+    @keyframes flicker {
+      0%, 100% { opacity: 0.08; }
+      50%      { opacity: 0.13; }
+    }
+
+    /* ===============================
+       4) TRANSACTIONS SCROLL AREA
+       =============================== */
+    .tx-container {
+      position: relative;
+      margin: 0 auto;
+      width: 80%;
+      max-width: 1200px;
+      height: 30vh;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid #333;
+      overflow: hidden;
+    }
+    .tx-container div {
+      font-size: 0.85rem;
+      color: #0cf;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* 
+       5) INTRODUCTION SECTION
+    */
+    .intro-section {
+      margin: 2rem auto 3rem auto;
+      width: 80%;
+      max-width: 1200px;
+      color: #fff;
+      line-height: 1.6;
+      padding: 1rem;
+    }
+    .intro-section h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 5px #ab3cff, 0 0 10px #ab3cff;
+    }
+    .intro-section p {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: #cccccc;
+    }
+    .features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .feature-item {
+      flex: 1 1 250px;
+      border: 1px solid #333;
+      padding: 1rem;
+      background: rgba(15, 15, 15, 0.3);
+      transition: transform 0.3s;
+    }
+    .feature-item:hover {
+      transform: translateY(-3px);
+      border-color: #ab3cff;
+    }
+    .feature-item h3 {
+      margin-bottom: 0.5rem;
+      color: #ab3cff;
+    }
+
+    /*************************************************************
+       6) ADDRESS SCORING SECTION (Using LIEB.AI Chart)
+    *************************************************************/
+    .address-scoring-section {
+      margin: 2rem auto 3rem auto;
+      width: 80%;
+      max-width: 1200px;
+      padding: 2rem 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid #333;
+    }
+    .address-scoring-section .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      text-shadow: 0 0 5px #ab3cff, 0 0 10px #ab3cff;
+      color: #fff;
+    }
+    .address-scoring-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .radar-model {
+      flex: 1 1 350px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    .scoring-text {
+      flex: 1 1 400px;
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+    .scoring-text p {
+      margin-bottom: 1rem;
+    }
+    .analyze-button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: #333;
+      color: #fff;
+      border: 1px solid #ab3cff;
+      text-shadow: 0 0 2px #ab3cff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .analyze-button:hover {
+      background: #ab3cff;
+      color: #fff;
+    }
+
+    /************************************************************
+      7) TOKEN PUSH SECTION
+    ************************************************************/
+    .token-push-section {
+      position: relative;
+      margin: 2rem auto 4rem auto;
+      width: 80%;
+      max-width: 1200px;
+      min-height: 400px;
+      background: rgba(15, 15, 15, 0.5);
+      border-top: 1px solid #333;
+      overflow: hidden;
+    }
+    .token-push-section .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      text-shadow: 0 0 5px #ab3cff, 0 0 10px #ab3cff;
+      color: #fff;
+    }
+    .token-push-container {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+    }
+    .push-effect-container {
+      flex: 0 0 400px;
+      width: 400px;
+      height: 400px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .token-push-transactions {
+      flex: 1;
+      height: 400px;
+      overflow: hidden;
+      padding-left: 2rem;
+      position: relative;
+    }
+    .token-push-transactions .tx-item {
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #0cf;
+      position: absolute;
+      left: 0;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .token-push-transactions .tx-item .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: url('https://via.placeholder.com/40') no-repeat center center;
+      background-size: cover;
+      margin-right: 0.5rem;
+    }
+
+    /************************************************************
+      8) Glowing Circle and Particle Effects
+    ************************************************************/
+    .outer-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 2px solid #ab3cff;
+      box-shadow: 0 0 15px #ab3cff, 0 0 30px #ab3cff inset;
+      animation: outerRingRotate 3s linear infinite;
+      z-index: 1;
+    }
+    @keyframes outerRingRotate {
+      0%   { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .inner-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 140px;
+      height: 140px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px #fff, 0 0 20px #fff inset;
+      z-index: 2;
+    }
+    .double-rings-text {
+      position: absolute;
+      top: 54%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: bold;
+      color: #ab3cff;
+      text-shadow: 0 0 5px #ab3cff,
+                   0 0 15px #ab3cff,
+                   0 0 30px #ab3cff;
+      opacity: 0;
+      animation: textFadeIn 1s forwards 1s;
+      z-index: 3;
+    }
+    @keyframes textFadeIn {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .double-rings-particle-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .double-rings-particle-wrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+    }
+    .double-rings-particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: #ab3cff;
+      border-radius: 50%;
+      opacity: 0;
+    }
+    @keyframes twoRingParticleExplosion {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+      }
+      100% {
+        transform: translate(120px, 0) scale(0.5);
+        opacity: 0;
+      }
+    }
+
+    /************************************************************
+      9) Radar Chart (Address Scoring) Internal Styles
+    ************************************************************/
+    #LIEB.AI-radar {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle at center, #0f0f0f 40%, #050505 100%);
+      border-radius: 10px;
+      box-shadow: 0 0 20px #00fff0;
+    }
+    #LIEB.AI-radar text {
+      fill: #00e8e0;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font-weight: bold;
+      pointer-events: none;
+      user-select: none;
+    }
+    .chart-title {
+      font-size: 18px;
+      fill: #00fff0;
+      text-shadow: 0 0 5px #00fff0;
+    }
+    .attr-label {
+      font-size: 14px;
+      fill: #00dabd;
+    }
+
+    /************************************************************
+      10) AUTO TRADING SECTION
+    ************************************************************/
+    .auto-trading-section {
+      margin: 2rem auto 4rem auto;
+      width: 80%;
+      max-width: 1200px;
+      min-height: 400px;
+      background: rgba(15, 15, 15, 0.5);
+      border-top: 1px solid #333;
+      overflow: hidden;
+      padding: 1rem;
+    }
+    .auto-trading-section .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      text-shadow: 0 0 5px #ab3cff, 0 0 10px #ab3cff;
+      color: #fff;
+    }
+    .auto-trading-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .auto-trading-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    /* Small-size effect container: half the size of Token Push (200x200) */
+    .small-push-effect-container {
+      flex: 0 0 200px;
+      width: 200px;
+      height: 200px;
+      position: relative;
+      flex-shrink: 0;
+      background: rgba(15, 15, 15, 0.7);
+      margin-right: 1rem;
+      overflow: hidden;
+    }
+    /* Inner content reusing push-effect-container effect, scaled to half */
+    .small-push-effect-container .small-push-effect-content {
+      transform: scale(0.5);
+      transform-origin: top left;
+      width: 400px;
+      height: 400px;
+      position: relative;
+    }
+    .auto-trading-text p {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #cccccc;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- (A) NAVBAR -->
+  <header class="navbar">
+    <div class="logo">LIEB.AI</div>
+    <nav>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#">Address Scoring</a></li>
+        <li><a href="#">Token Push</a></li>
+        <li><a href="#">Auto Trading</a></li>
+        <li><a href="">Twitter</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- (B) MAIN ANIMATION CONTAINER -->
+  <div class="animation-container">
+    <canvas id="networkCanvas"></canvas>
+    <canvas id="klineCanvas"></canvas>
+    <h1 id="title">LIEB.AI</h1>
+    <p id="subtitle">Deploy Your AI Trading</p>
+    <div class="scan-line"></div>
+  </div>
+
+  <!-- (C) TRANSACTIONS SCROLL AREA -->
+  <div class="tx-container" id="txContainer"></div>
+
+  <!-- (D) INTRODUCTION SECTION -->
+  <section class="intro-section">
+    <h2>Make Blockchain Trading Smarter</h2>
+    <p>
+      LIEB.AI is a trading platform that integrates AI and blockchain technology around three core features: 
+      "Address Scoring", "Token Push", and "Auto Trading". It helps you effectively grasp market trends 
+      and make more accurate investment decisions.
+    </p>
+    <p>
+      Whether you are a beginner or a professional trader, you can easily configure trading strategies, 
+      track high-value addresses, and enjoy a one-stop intelligent trading experience here.
+    </p>
+    <div class="features-list">
+      <div class="feature-item">
+        <h3>Address Scoring</h3>
+        <p>
+          Analyze on-chain transaction data in real time, use AI algorithms to score addresses, 
+          identify high-quality addresses, and effectively prevent potential risks.
+        </p>
+      </div>
+      <div class="feature-item">
+        <h3>Token Push</h3>
+        <p>
+          Perform weighted calculations on various tokens based on address activity and historical performance. 
+          Once a high-quality target or a suitable buying point appears, you will be immediately notified.
+        </p>
+      </div>
+      <div class="feature-item">
+        <h3>Auto Trading</h3>
+        <p>
+          Combine exchange data with smart contracts to provide automated execution solutions for different 
+          trading styles, helping you capture market fluctuations and trade seamlessly.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- (E) ADDRESS SCORING SECTION -->
+  <section class="address-scoring-section">
+    <h2 class="section-title">Address Scoring</h2>
+    <div class="address-scoring-content">
+      <!-- Left: Radar Chart -->
+      <div class="radar-model">
+        <svg id="LIEB.AI-radar" viewBox="0 0 450 450">
+          <!-- Define Neon Filter -->
+          <defs>
+            <filter id="neon-glow">
+              <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#00fff0"/>
+              <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00fff0"/>
+            </filter>
+          </defs>
+        </svg>
+      </div>
+      <!-- Right: Description and Button -->
+      <div class="scoring-text">
+        <p>
+          We combine real-time on-chain data to evaluate each address across multiple dimensions, 
+          including capital scale, stability, profitability, risk preference, operation style, 
+          and entry timing. By analyzing these factors, we build a comprehensive profile that 
+          helps you discover addresses aligned with your trading strategy.
+        </p>
+        <p>
+          This advanced scoring mechanism guides you toward more suitable copy-trading targets. 
+          Whether you aim for stable returns or embrace higher risks, our Address Scoring feature 
+          will help you pinpoint the most fitting profiles to follow.
+        </p>
+        <button class="analyze-button" onclick="window.location.href='address-scoring.html'">
+          Analyze Now
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- (F) TOKEN PUSH SECTION -->
+  <section class="token-push-section">
+    <h2 class="section-title">Token Push</h2>
+    <div class="token-push-container">
+      <!-- Left: Glowing Circle Effect -->
+      <div class="push-effect-container" id="push-effect-container">
+        <div class="outer-circle" id="outer-circle"></div>
+        <div class="inner-circle" id="inner-circle"></div>
+        <div class="double-rings-text" id="double-rings-text">TRUMP</div>
+        <div class="double-rings-particle-container" id="double-rings-particle-container">
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+          <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+        </div>
+      </div>
+      <!-- Right: Token Push Transaction Scrolling Area -->
+      <div class="token-push-transactions" id="tokenPushTxContainer">
+        <!-- JS will dynamically add scrolling transaction info with an avatar on the left for each entry -->
+      </div>
+    </div>
+    <!-- Optional audio for effect -->
+    <audio id="double-rings-sound" src="data:audio/wav;base64,
+UklGRlCIAABXQVZFZm10IBAAAAABAAEAQB8AAAABAAIAOAAAACAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAgIC
+AgICAgICAgICAgP//AAD//wAA//8AAP///wAA//8AAP//AAD//wAA//
+8AAP///wAA//8AAP//AAA="></audio>
+  </section>
+
+  <!-- (G) AUTO TRADING SECTION -->
+  <section class="auto-trading-section">
+    <h2 class="section-title">Auto Trading</h2>
+    <div class="auto-trading-container">
+      <!-- First Row -->
+      <div class="auto-trading-row">
+        <div class="small-push-effect-container">
+          <div class="small-push-effect-content">
+            <div class="outer-circle"></div>
+            <div class="inner-circle"></div>
+            <div class="double-rings-text">TRUMP</div>
+            <div class="double-rings-particle-container">
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="auto-trading-text">
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and buys 5sol Trump when the market value is 50M</p>
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and sells all Trump when the market value is 500M</p>
+        </div>
+      </div>
+      <!-- Second Row -->
+      <div class="auto-trading-row">
+        <div class="small-push-effect-container">
+          <div class="small-push-effect-content">
+            <div class="outer-circle"></div>
+            <div class="inner-circle"></div>
+            <div class="double-rings-text">Vine</div>
+            <div class="double-rings-particle-container">
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="auto-trading-text">
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and buys 10sol Vine when the market value is 20M</p>
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and sells all Vine when the market value is 200M</p>
+        </div>
+      </div>
+      <!-- Third Row -->
+      <div class="auto-trading-row">
+        <div class="small-push-effect-container">
+          <div class="small-push-effect-content">
+            <div class="outer-circle"></div>
+            <div class="inner-circle"></div>
+            <div class="double-rings-text">Jump</div>
+            <div class="double-rings-particle-container">
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+              <div class="double-rings-particle-wrap"><div class="double-rings-particle"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="auto-trading-text">
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and buys 5sol Jump when the market value is 30M</p>
+          <p>When the trading conditions are met, Karlistia triggers automatic trading, and sells all Jump when the market value is 350M</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       JS: Animations & Logic
+       ============================ -->
+  <script>
+    /*******************************************************
+     * (1) NODE NETWORK + K-LINE + TRANSACTION SCROLLING
+     *******************************************************/
+    const networkCanvas = document.getElementById('networkCanvas');
+    const netCtx = networkCanvas.getContext('2d');
+    networkCanvas.width = window.innerWidth;
+    networkCanvas.height = Math.floor(window.innerHeight * 0.70);
+
+    const NUM_NODES = 15;
+    const nodes = [];
+    for (let i = 0; i < NUM_NODES; i++) {
+      nodes.push({
+        x: Math.random() * networkCanvas.width,
+        y: Math.random() * networkCanvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+      });
+    }
+
+    let pulses = [];
+
+    function animateNetwork() {
+      netCtx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
+
+      // Update node positions
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        node.x += node.vx;
+        node.y += node.vy;
+        // Bounce from edges
+        if (node.x < 0 || node.x > networkCanvas.width) node.vx *= -1;
+        if (node.y < 0 || node.y > networkCanvas.height) node.vy *= -1;
+      }
+
+      // Draw lines between close nodes
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i+1; j < nodes.length; j++){
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 600) {
+            netCtx.strokeStyle = 'rgba(171,60,255,0.5)';
+            netCtx.lineWidth = 1;
+            netCtx.beginPath();
+            netCtx.moveTo(nodes[i].x, nodes[i].y);
+            netCtx.lineTo(nodes[j].x, nodes[j].y);
+            netCtx.stroke();
+          }
+        }
+      }
+
+      // Draw node circles
+      for (let i = 0; i < nodes.length; i++) {
+        netCtx.beginPath();
+        netCtx.arc(nodes[i].x, nodes[i].y, 5, 0, Math.PI*2);
+        netCtx.fillStyle = '#f0f';
+        netCtx.fill();
+      }
+
+      // Pulses
+      for (let i = 0; i < pulses.length; i++) {
+        const pulse = pulses[i];
+        const dx = pulse.targetX - pulse.x;
+        const dy = pulse.targetY - pulse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 6) {
+          pulses.splice(i,1);
+          i--;
+          continue;
+        }
+        const angle = Math.atan2(dy, dx);
+        pulse.x += pulse.speed * Math.cos(angle);
+        pulse.y += pulse.speed * Math.sin(angle);
+
+        netCtx.beginPath();
+        netCtx.arc(pulse.x, pulse.y, pulse.radius, 0, 2*Math.PI);
+        netCtx.fillStyle = 'rgba(255,255,100,0.9)';
+        netCtx.fill();
+      }
+
+      requestAnimationFrame(animateNetwork);
+    }
+    animateNetwork();
+
+    // K-Line
+    const klineCanvas = document.getElementById('klineCanvas');
+    const kCtx = klineCanvas.getContext('2d');
+    klineCanvas.width = 1200;
+    klineCanvas.height = 300;
+    const candleCount = 60;
+    const candles = [];
+    let startPrice = 100;
+
+    for (let i=0; i<candleCount; i++){
+      let open;
+      if (i===0) {
+        open = startPrice;
+      } else {
+        open = candles[i-1].close;
+      }
+      open += (Math.random() - 0.5)*2;
+      let close = open + (Math.random()-0.5)*4;
+      let high = Math.max(open, close) + Math.random()*2;
+      let low = Math.min(open, close) - Math.random()*2;
+      candles.push({ open, close, high, low });
+    }
+
+    let offset = 0;
+
+    function drawCandles() {
+      kCtx.clearRect(0,0,klineCanvas.width,klineCanvas.height);
+      const maxPrice = Math.max(...candles.map(c=>c.high));
+      const minPrice = Math.min(...candles.map(c=>c.low));
+      const candleWidth = 15;
+      const spacing = 5;
+
+      for (let i=0; i<candles.length; i++){
+        const c = candles[i];
+        const yOpen  = mapValue(c.open, minPrice, maxPrice, klineCanvas.height, 0);
+        const yClose = mapValue(c.close,minPrice, maxPrice, klineCanvas.height, 0);
+        const yHigh  = mapValue(c.high, minPrice, maxPrice, klineCanvas.height, 0);
+        const yLow   = mapValue(c.low,  minPrice, maxPrice, klineCanvas.height, 0);
+
+        const xPos = (i*(candleWidth + spacing)) - offset;
+        if (xPos + candleWidth < 0) continue;
+        if (xPos > klineCanvas.width) continue;
+
+        const candleColor = c.close > c.open ? '#00ff9f' : '#ff006f';
+
+        // Wick
+        kCtx.beginPath();
+        kCtx.strokeStyle = candleColor;
+        kCtx.moveTo(xPos + candleWidth/2, yHigh);
+        kCtx.lineTo(xPos + candleWidth/2, yLow);
+        kCtx.stroke();
+
+        // Body
+        kCtx.fillStyle = candleColor;
+        kCtx.fillRect(
+          xPos,
+          Math.min(yOpen,yClose),
+          candleWidth,
+          Math.abs(yOpen - yClose)
+        );
+      }
+      offset += 1;
+      if (offset > candleWidth+spacing) {
+        offset=0;
+        candles.shift();
+        const prevClose = candles[candles.length-1].close;
+        const open2 = prevClose + (Math.random()-0.5)*2;
+        const close2= open2 + (Math.random()-0.5)*4;
+        const high2 = Math.max(open2, close2) + Math.random()*2;
+        const low2  = Math.min(open2, close2) - Math.random()*2;
+        candles.push({ open:open2, close:close2, high:high2, low:low2 });
+      }
+      requestAnimationFrame(drawCandles);
+    }
+
+    function mapValue(value, min, max, newMin, newMax){
+      return newMin + (newMax - newMin)*(value-min)/(max-min);
+    }
+    // Fade in K-Line chart after 3s
+    setTimeout(()=>{
+      klineCanvas.style.opacity = 1;
+      drawCandles();
+    },3000);
+
+    // Transactions (scrolling in tx-container)
+    const simpleTransactions = [
+      'Signature: 3gGpwV...  | Block: 316433743 | route | 0.0101 SOL',
+      'Signature: 2QJbu9...  | Block: 316433744 | swap  | 0.0005 SOL',
+      'Signature: 5Xqwer...  | Block: 316433745 | route | 0.002 SOL',
+      'Signature: 9ApoiL...  | Block: 316433746 | xfer  | 0.0001 SOL',
+      'Signature: FASp44...  | Block: 316433747 | xfer  | 0.0003 SOL',
+      'Signature: 8ZZrw1...  | Block: 316433748 | route | 0.015 SOL',
+      'Signature: 3RHcmQ...  | Block: 316433749 | swap  | 0.001 SOL',
+      'Signature: 2PKBvm...  | Block: 316433750 | xfer  | 0.00004 SOL'
+    ];
+    const detailedTransactions = [
+      {
+        signature: "29XieGyowUfJVWQCatZ81Tcj4fCmh8kSagM81d6eLHmzM7p4gZvKBqyGM5Qe1f1iU16cYAjCFZgVkibJVJqFG9Zu",
+        block: "317763565",
+        timeAgo: "35 secs ago",
+        result: "SUCCESS",
+        fee: "0.000005 SOL ($0.001136)"
+      }
+    ];
+    const txContainer = document.getElementById('txContainer');
+    let scrollingTxs = [];
+
+    function initTxLines(count=6){
+      for(let i=0;i<count;i++){
+        addNewTxLine(i*50);
+      }
+    }
+    function addNewTxLine(yPos){
+      if(window.innerWidth > 1000) {
+        const txObj = detailedTransactions[Math.floor(Math.random() * detailedTransactions.length)];
+        scrollingTxs.push({ text: getDetailedTxSummary(txObj), y: yPos, speed: 0.4 });
+      } else {
+        const randomTx = simpleTransactions[Math.floor(Math.random()*simpleTransactions.length)];
+        scrollingTxs.push({ text: randomTx, y: yPos, speed: 0.4 });
+      }
+    }
+    function animateTxLines(){
+      txContainer.innerHTML = '';
+      for(let i=0;i<scrollingTxs.length;i++){
+        const tx = scrollingTxs[i];
+        tx.y += tx.speed;
+        const div = document.createElement('div');
+        div.textContent = tx.text;
+        div.style.position='absolute';
+        div.style.left='50%';
+        div.style.transform='translateX(-50%)';
+        div.style.top= tx.y + 'px';
+        div.style.whiteSpace = "nowrap";
+        div.style.overflow = "hidden";
+        div.style.textOverflow = "ellipsis";
+        txContainer.appendChild(div);
+      }
+      scrollingTxs = scrollingTxs.filter(t=> t.y < txContainer.clientHeight+50);
+      while(scrollingTxs.length<6){
+        addNewTxLine(-50);
+      }
+      requestAnimationFrame(animateTxLines);
+    }
+    function getDetailedTxSummary(tx) {
+      return `Signature: ${tx.signature} | Block: ${tx.block} (${tx.timeAgo}) | Result: ${tx.result} | Fee: ${tx.fee}`;
+    }
+    initTxLines(6);
+    animateTxLines();
+
+    /*******************************************************
+     * (2) TOKEN PUSH Transaction Scrolling Logic
+     *******************************************************/
+    const tokenPushTransactionsSimple = [
+      "Karlista bought 1515 SOL Trump 2 hours ago",
+      "Tomathan bought 300 SOL Trump 3 hours ago",
+      "Andrew bought 500 SOL Trump 4 hours ago",
+      "Tina bought 300 SOL Trump 5 hours ago",
+    ];
+    let tokenPushScrollingTxs = [];
+
+    function initTokenPushTxLines(count = 10) {
+      for (let i = 0; i < count; i++) {
+        addNewTokenPushTxLine(i * 50);
+      }
+    }
+    function addNewTokenPushTxLine(yPos) {
+      const randomTx = tokenPushTransactionsSimple[Math.floor(Math.random() * tokenPushTransactionsSimple.length)];
+      tokenPushScrollingTxs.push({ text: randomTx, y: yPos, speed: 0.4 });
+    }
+    function animateTokenPushTxLines() {
+      const container = document.getElementById("tokenPushTxContainer");
+      container.innerHTML = '';
+      tokenPushScrollingTxs.forEach(tx => {
+        tx.y += tx.speed;
+        const div = document.createElement('div');
+        div.className = 'tx-item';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        const span = document.createElement('span');
+        span.textContent = tx.text;
+        div.appendChild(avatar);
+        div.appendChild(span);
+        div.style.top = tx.y + 'px';
+        container.appendChild(div);
+      });
+      tokenPushScrollingTxs = tokenPushScrollingTxs.filter(t => t.y < container.clientHeight + 50);
+      while (tokenPushScrollingTxs.length < 10) {
+        addNewTokenPushTxLine(-50);
+      }
+      requestAnimationFrame(animateTokenPushTxLines);
+    }
+    initTokenPushTxLines(10);
+    animateTokenPushTxLines();
+
+    /*******************************************************
+     * (3) TOKEN PUSH Glowing Circle Effect Logic
+     *******************************************************/
+    const effectContainer   = document.getElementById('push-effect-container');
+    const outerCircle       = document.getElementById('outer-circle');
+    const innerCircle       = document.getElementById('inner-circle');
+    const twoRingText       = document.getElementById('double-rings-text');
+    const twoRingAudio      = document.getElementById('double-rings-sound');
+    const particlesContainer= document.getElementById('double-rings-particle-container');
+    const allParticles      = particlesContainer.querySelectorAll('.double-rings-particle');
+
+    const weaponTierStyles = {
+      common:       { color: '#bbb',     glow: '#bbb'     },
+      uncommon:     { color: '#0cf',     glow: '#0cf'     },
+      rare:         { color: '#00ff9f', glow: '#00ff9f'   },
+      epic:         { color: '#f0f',     glow: '#f0f'     },
+      legendary:    { color: '#ab3cff', glow: '#ab3cff'   },
+      mythic:       { color: '#ff006f', glow: '#ff006f'   },
+      transcendent: { color: '#ffdf8e', glow: '#ffd700'   }
+    };
+
+    const tierHierarchy = [
+      'common','uncommon','rare','epic','legendary','mythic','transcendent'
+    ];
+
+    function showTwoRingEffect(mainTier) {
+      const mainStyle = weaponTierStyles[mainTier] || weaponTierStyles['common'];
+      const idx = tierHierarchy.indexOf(mainTier);
+      let lowerTier = 'common';
+      if (idx > 0) {
+        lowerTier = tierHierarchy[idx-1];
+      }
+      const lowerStyle = weaponTierStyles[lowerTier];
+
+      outerCircle.style.borderColor = mainStyle.glow;
+      outerCircle.style.boxShadow   = `0 0 15px ${mainStyle.glow}, 0 0 30px ${mainStyle.glow} inset`;
+
+      innerCircle.style.borderColor = lowerStyle.glow;
+      innerCircle.style.boxShadow   = `0 0 10px ${lowerStyle.glow}, 0 0 20px ${lowerStyle.glow} inset`;
+
+      twoRingText.style.color = mainStyle.color;
+      twoRingText.style.textShadow = `
+        0 0 5px ${mainStyle.glow},
+        0 0 15px ${mainStyle.glow},
+        0 0 30px ${mainStyle.glow}
+      `;
+
+      allParticles.forEach(p=> {
+        p.style.backgroundColor = mainStyle.glow;
+      });
+
+      effectContainer.classList.add('double-rings-effect-active');
+      twoRingAudio.currentTime = 0;
+      twoRingAudio.play().catch(err=>{
+        console.warn("Audio playback blocked:", err);
+      });
+
+      setTimeout(()=>{
+        effectContainer.classList.remove('double-rings-effect-active');
+      },3000);
+    }
+
+    setTimeout(()=>{
+      showTwoRingEffect('mythic');
+    }, 5000);
+  </script>
+
+  <!-- ====================================================
+       (4) LIEB.AI Chart Drawing Script - Embedded in the Left SVG of the Address Scoring Section
+  ==================================================== -->
+  <script>
+    const attributesData = [
+      { name: "Capital Scale",  value: 55 },
+      { name: "Stability",      value: 15 },
+      { name: "Profitability",  value: 30 },
+      { name: "Risk Appetite",  value: 30 },
+      { name: "Trading Style",  value: 5  },
+      { name: "Entry Timing",   value: 5  },
+    ];
+
+    const chartTitle = "Javier Milei";
+    const maxValue = 60;
+    const levels = 5;
+    const svg = document.getElementById("LIEB.AI-radar");
+    const width = 450;
+    const height = 450;
+    const centerX = width / 2;
+    const centerY = height / 2 + 30;
+    const radius = 100;
+
+    function scaleValue(val) {
+      return (val / maxValue) * radius;
+    }
+
+    function getAngle(index, total) {
+      const angleDeg = -90 + (360 / total) * index;
+      return (Math.PI / 180) * angleDeg;
+    }
+
+    function createSvgElement(type, attrs = {}) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", type);
+      for (const [attr, val] of Object.entries(attrs)) {
+        el.setAttribute(attr, val);
+      }
+      return el;
+    }
+
+    for (let level = 1; level <= levels; level++) {
+      const r = (radius / levels) * level;
+      const points = [];
+      for (let i = 0; i < attributesData.length; i++) {
+        const angle = getAngle(i, attributesData.length);
+        const x = centerX + r * Math.cos(angle);
+        const y = centerY + r * Math.sin(angle);
+        points.push(`${x},${y}`);
+      }
+      const polygon = createSvgElement("polygon", {
+        points: points.join(" "),
+        fill: "none",
+        stroke: "#00fff0",
+        "stroke-width": "0.5",
+        filter: "url(#neon-glow)"
+      });
+      svg.appendChild(polygon);
+    }
+
+    for (let i = 0; i < attributesData.length; i++) {
+      const angle = getAngle(i, attributesData.length);
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      const line = createSvgElement("line", {
+        x1: centerX, y1: centerY,
+        x2: x,       y2: y,
+        stroke: "#00fff0",
+        "stroke-width": "0.5",
+        filter: "url(#neon-glow)"
+      });
+      svg.appendChild(line);
+    }
+
+    const dataPoints = [];
+    attributesData.forEach((attr, i) => {
+      const r = scaleValue(attr.value);
+      const angle = getAngle(i, attributesData.length);
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
+      dataPoints.push(`${x},${y}`);
+    });
+    const dataPolygon = createSvgElement("polygon", {
+      points: dataPoints.join(" "),
+      fill: "rgba(0, 255, 240, 0.25)",
+      stroke: "rgba(0, 255, 240, 0.9)",
+      "stroke-width": "2",
+      filter: "url(#neon-glow)"
+    });
+    svg.appendChild(dataPolygon);
+
+    attributesData.forEach((attr, i) => {
+      const r = radius + 30;
+      const angle = getAngle(i, attributesData.length);
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
+      const label = createSvgElement("text", {
+        class: "attr-label",
+        x: x,
+        y: y,
+      });
+      label.textContent = `${attr.name}: ${attr.value}`;
+      svg.appendChild(label);
+    });
+
+    const titleEl = createSvgElement("text", {
+      class: "chart-title",
+      x: centerX,
+      y: centerY - radius - 90
+    });
+    titleEl.textContent = chartTitle;
+    svg.appendChild(titleEl);
+  </script>
+</body>
+</html>
